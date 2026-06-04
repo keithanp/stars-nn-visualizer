@@ -1,0 +1,131 @@
+import type { CatalogEntry, Star, StarDataset, Vec3 } from './types';
+
+function computeBounds(positions: Float32Array, count: number): { min: Vec3; max: Vec3 } {
+  const min: Vec3 = [Infinity, Infinity, Infinity];
+  const max: Vec3 = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < count; i++) {
+    const x = positions[i * 3];
+    const y = positions[i * 3 + 1];
+    const z = positions[i * 3 + 2];
+    if (x < min[0]) min[0] = x;
+    if (y < min[1]) min[1] = y;
+    if (z < min[2]) min[2] = z;
+    if (x > max[0]) max[0] = x;
+    if (y > max[1]) max[1] = y;
+    if (z > max[2]) max[2] = z;
+  }
+  return { min, max };
+}
+
+export async function loadCatalog(): Promise<StarDataset> {
+  const response = await fetch('/data/hyg_subset.json');
+  if (!response.ok) {
+    throw new Error(`Failed to load catalog: ${response.statusText}`);
+  }
+  const entries: CatalogEntry[] = await response.json();
+  const count = entries.length;
+  const positions = new Float32Array(count * 3);
+  const stars: Star[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const e = entries[i];
+    positions[i * 3] = e.x;
+    positions[i * 3 + 1] = e.y;
+    positions[i * 3 + 2] = e.z;
+    stars.push({
+      pos: [e.x, e.y, e.z],
+      name: e.name,
+      mag: e.mag,
+    });
+  }
+
+  return {
+    positions,
+    stars,
+    count,
+    bounds: computeBounds(positions, count),
+  };
+}
+
+/** Fallback catalog embedded for offline / missing file scenarios */
+export function getFallbackCatalog(): StarDataset {
+  const entries: CatalogEntry[] = [
+    { name: 'Proxima Centauri', x: 1.30, y: -3.85, z: -2.96, mag: 11.01 },
+    { name: 'Alpha Centauri A', x: -0.49, y: -1.16, z: -3.85, mag: 0.01 },
+    { name: 'Alpha Centauri B', x: -0.49, y: -1.16, z: -3.85, mag: 1.33 },
+    { name: 'Barnard\'s Star', x: -0.02, y: -5.96, z: 0.18, mag: 9.50 },
+    { name: 'Wolf 359', x: -7.78, y: 2.97, z: 3.05, mag: 13.44 },
+    { name: 'Sirius A', x: -1.55, y: 6.79, z: -2.30, mag: -1.46 },
+    { name: 'Sirius B', x: -1.55, y: 6.79, z: -2.30, mag: 8.44 },
+    { name: 'Procyon A', x: -3.15, y: 10.34, z: -1.04, mag: 0.34 },
+    { name: 'Procyon B', x: -3.15, y: 10.34, z: -1.04, mag: 10.70 },
+    { name: 'Ross 154', x: -9.07, y: -2.44, z: -4.69, mag: 10.43 },
+    { name: 'Ross 248', x: 3.79, y: 10.30, z: 4.84, mag: 12.29 },
+    { name: 'Epsilon Eridani', x: 6.21, y: -8.07, z: 2.03, mag: 3.73 },
+    { name: 'Lacaille 9352', x: 8.66, y: 2.03, z: -6.88, mag: 7.34 },
+    { name: 'Ross 128', x: 3.39, y: -8.24, z: 3.46, mag: 11.13 },
+    { name: 'EZ Aquarii', x: 11.27, y: -3.05, z: -8.03, mag: 12.27 },
+    { name: '61 Cygni A', x: 2.35, y: 6.76, z: 8.06, mag: 5.20 },
+    { name: '61 Cygni B', x: 2.35, y: 6.76, z: 8.06, mag: 6.03 },
+    { name: 'Struve 2398 A', x: 11.52, y: 4.96, z: 2.65, mag: 8.90 },
+    { name: 'Struve 2398 B', x: 11.52, y: 4.96, z: 2.65, mag: 9.69 },
+    { name: 'Groombridge 34 A', x: 11.62, y: 0.49, z: 2.95, mag: 8.08 },
+    { name: 'Groombridge 34 B', x: 11.62, y: 0.49, z: 2.95, mag: 11.06 },
+    { name: 'DX Cancri', x: 11.82, y: 3.35, z: 0.49, mag: 14.78 },
+    { name: 'Tau Ceti', x: 3.45, y: -11.43, z: 0.06, mag: 3.49 },
+    { name: 'GJ 1061', x: 3.67, y: -11.74, z: 0.49, mag: 13.03 },
+    { name: 'YZ Ceti', x: 3.56, y: -12.11, z: 0.49, mag: 12.07 },
+    { name: 'Luyten\'s Star', x: 3.67, y: -11.74, z: 0.49, mag: 9.86 },
+    { name: 'Kapteyn\'s Star', x: 5.88, y: -11.44, z: -2.96, mag: 8.84 },
+    { name: 'Van Maanen\'s Star', x: 2.35, y: 8.06, z: 1.04, mag: 12.37 },
+    { name: 'Gliese 687', x: 8.66, y: 2.03, z: -6.88, mag: 9.17 },
+    { name: 'Gliese 674', x: 5.88, y: -11.44, z: -2.96, mag: 9.38 },
+    { name: 'Gliese 876', x: 4.84, y: -8.24, z: 3.46, mag: 10.17 },
+    { name: 'Altair', x: 5.13, y: 16.71, z: -0.49, mag: 0.77 },
+    { name: 'Vega', x: -8.06, y: 6.21, z: 9.07, mag: 0.03 },
+    { name: 'Arcturus', x: -11.43, y: 2.96, z: 0.49, mag: -0.05 },
+    { name: 'Capella', x: -4.69, y: 2.96, z: 42.96, mag: 0.08 },
+    { name: 'Rigel', x: 78.06, y: -31.43, z: 140.49, mag: 0.13 },
+    { name: 'Betelgeuse', x: 197.06, y: 81.43, z: 45.96, mag: 0.42 },
+    { name: 'Polaris', x: 132.06, y: 27.43, z: 380.49, mag: 1.98 },
+    { name: 'Aldebaran', x: 20.06, y: 44.43, z: 39.96, mag: 0.85 },
+    { name: 'Spica', x: 73.06, y: -66.43, z: 198.96, mag: 0.97 },
+    { name: 'Antares', x: 170.06, y: -87.43, z: 45.96, mag: 0.96 },
+    { name: 'Pollux', x: 10.34, y: 21.43, z: 4.84, mag: 1.14 },
+    { name: 'Fomalhaut', x: 7.78, y: 5.96, z: 3.05, mag: 1.16 },
+    { name: 'Deneb', x: 993.06, y: 1627.43, z: 380.96, mag: 1.25 },
+    { name: 'Regulus', x: 24.06, y: 18.43, z: 12.96, mag: 1.35 },
+    { name: 'Castor', x: 15.06, y: 24.43, z: 8.96, mag: 1.58 },
+    { name: 'Bellatrix', x: 73.06, y: -31.43, z: 140.96, mag: 1.64 },
+    { name: 'Alnilam', x: 412.06, y: -687.43, z: 280.96, mag: 1.69 },
+    { name: 'Alnitak', x: 412.06, y: -687.43, z: 280.96, mag: 1.74 },
+    { name: 'Mintaka', x: 412.06, y: -687.43, z: 280.96, mag: 2.23 },
+  ];
+
+  const count = entries.length;
+  const positions = new Float32Array(count * 3);
+  const stars: Star[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const e = entries[i];
+    positions[i * 3] = e.x;
+    positions[i * 3 + 1] = e.y;
+    positions[i * 3 + 2] = e.z;
+    stars.push({ pos: [e.x, e.y, e.z], name: e.name, mag: e.mag });
+  }
+
+  return {
+    positions,
+    stars,
+    count,
+    bounds: computeBounds(positions, count),
+  };
+}
+
+export async function loadCatalogSafe(): Promise<StarDataset> {
+  try {
+    return await loadCatalog();
+  } catch {
+    return getFallbackCatalog();
+  }
+}
